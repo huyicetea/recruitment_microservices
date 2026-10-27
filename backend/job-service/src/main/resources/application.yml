@@ -6,14 +6,14 @@ spring:
     name: job-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/job_db
-    username: postgres
-    password: postgrespassword
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/job_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres_secure_pass}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -22,4 +22,4 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never
