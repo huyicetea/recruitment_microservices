@@ -34,14 +34,12 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Common Library Module -->
             <dependency>
                 <groupId>com.smarthr</groupId>
                 <artifactId>common-lib</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
             </dependency>
 
-            <!-- JWT JJWT -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>

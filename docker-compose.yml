@@ -58,7 +58,7 @@ services:
     volumes:
       - kafkadata:/var/lib/kafka/data
 
-  # Kafka UI để quản lý trực quan topics, consumers, messages
+  # Kafka UI
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: smarthr-kafka-ui
@@ -71,7 +71,7 @@ services:
     depends_on:
       - kafka
 
-  # 4. Qdrant 1.10+ Vector Database
+  # 4. Qdrant Vector Database
   qdrant:
     image: qdrant/qdrant:v1.10.1
     container_name: smarthr-qdrant
@@ -82,7 +82,7 @@ services:
     volumes:
       - qdrantdata:/qdrant/storage
 
-  #5. MinIO Object Storage
+  # 5. MinIO Object Storage
   minio:
     image: minio/minio:RELEASE.2024-05-10T01-41-38Z
     container_name: smarthr-minio
@@ -97,6 +97,23 @@ services:
     volumes:
       - miniodata:/data
 
+  # 6. SmartHR Job Service
+  job-service:
+    build:
+      context: ./backend/job-service
+      dockerfile: Dockerfile
+    container_name: smarthr-job-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/job_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_pass}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   pgdata:

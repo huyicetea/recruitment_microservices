@@ -1,5 +1,6 @@
 package com.smarthr.job.service.impl;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +37,8 @@ public class JobServiceImpl implements JobService {
     @Override
     @Transactional
     public JobRes createJob(CreateJobReq req) {
+        validateSalary(req.getSalaryMin(), req.getSalaryMax());
+
         Job job = Job.builder()
                 .companyId(req.getCompanyId())
                 .recruiterId(req.getRecruiterId())
@@ -45,18 +48,20 @@ public class JobServiceImpl implements JobService {
                 .benefits(req.getBenefits())
                 .salaryMin(req.getSalaryMin())
                 .salaryMax(req.getSalaryMax())
-                .currency(req.getCurrency())
+                .currency(req.getCurrency() != null && !req.getCurrency().isBlank() ? req.getCurrency() : "VND")
                 .location(req.getLocation())
                 .employmentType(req.getEmploymentType())
                 .experienceLevel(req.getExperienceLevel())
                 .status(JobStatus.DRAFT)
                 .build();
 
+        Job savedJob = jobRepo.save(job);
+
         if (req.getSkills() != null && !req.getSkills().isEmpty()) {
-            attachSkillsToJob(job, req.getSkills());
+            attachSkillsToJob(savedJob, req.getSkills());
+            savedJob = jobRepo.save(savedJob);
         }
 
-        Job savedJob = jobRepo.save(job);
         return mapToJobRes(savedJob);
     }
 
@@ -100,8 +105,12 @@ public class JobServiceImpl implements JobService {
         if (req.getExperienceLevel() != null) job.setExperienceLevel(req.getExperienceLevel());
         if (req.getStatus() != null) job.setStatus(req.getStatus());
 
+        validateSalary(job.getSalaryMin(), job.getSalaryMax());
+
         if (req.getSkills() != null) {
             job.getJobSkills().clear();
+            jobRepo.saveAndFlush(job);
+
             attachSkillsToJob(job, req.getSkills());
         }
 
@@ -119,13 +128,21 @@ public class JobServiceImpl implements JobService {
     }
 
     private void attachSkillsToJob(Job job, Set<JobSkillReq> skillRequests) {
+        Set<Integer> addedSkillIds = new HashSet<>();
+
         for (JobSkillReq req : skillRequests) {
-            Skill skill = skillRepo.findByNameIgnoreCase(req.getSkillName().trim())
-                    .orElseGet(() -> skillRepo.save(
-                            Skill.builder()
-                                    .name(req.getSkillName().trim())
-                                    .build()
-                    ));
+            Skill skill;
+
+            if (req.getSkillId() != null) {
+                skill = skillRepo.findById(req.getSkillId())
+                        .orElseGet(() -> findOrCreateSkillByName(req.getSkillName()));
+            } else {
+                skill = findOrCreateSkillByName(req.getSkillName());
+            }
+
+            if (!addedSkillIds.add(skill.getId())) {
+                continue;
+            }
 
             JobSkill.JobSkillId compositeId = new JobSkill.JobSkillId(job.getId(), skill.getId());
 
@@ -133,10 +150,28 @@ public class JobServiceImpl implements JobService {
                     .id(compositeId)
                     .job(job)
                     .skill(skill)
-                    .requiredLevel(req.getRequiredLevel() != null ? req.getRequiredLevel() : "REQUIRED")
+                    .requiredLevel(req.getRequiredLevel() != null && !req.getRequiredLevel().isBlank()
+                            ? req.getRequiredLevel()
+                            : "REQUIRED")
                     .build();
 
             job.getJobSkills().add(jobSkill);
+        }
+    }
+
+    private Skill findOrCreateSkillByName(String rawName) {
+        String cleanName = rawName.trim();
+        return skillRepo.findByNameIgnoreCase(cleanName)
+                .orElseGet(() -> skillRepo.save(
+                        Skill.builder()
+                                .name(cleanName)
+                                .build()
+                ));
+    }
+
+    private void validateSalary(BigDecimal min, BigDecimal max) {
+        if (min != null && max != null && min.compareTo(max) > 0) {
+            throw new IllegalArgumentException("Minimum salary cannot be greater than maximum salary");
         }
     }
 
