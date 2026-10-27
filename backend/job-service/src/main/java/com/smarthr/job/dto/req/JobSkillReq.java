@@ -23,4 +23,7 @@ public class JobSkillReq {
 
     @Builder.Default
     private String requiredLevel = "REQUIRED";
+
+    @Builder.Default
+    private Boolean mustHave = false;
 }

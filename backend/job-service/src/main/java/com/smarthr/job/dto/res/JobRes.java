@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.smarthr.job.model.enums.EmploymentType;
 import com.smarthr.job.model.enums.ExperienceLevel;
 import com.smarthr.job.model.enums.JobStatus;
+import com.smarthr.job.model.enums.WorkMode;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,6 +34,10 @@ public class JobRes {
     private BigDecimal salaryMax;
     private String currency;
     private String location;
+    private String industry;
+    private WorkMode workMode;
+    private Integer minYearsExp;
+    private OffsetDateTime deadline;
     private EmploymentType employmentType;
     private ExperienceLevel experienceLevel;
     private JobStatus status;

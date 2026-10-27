@@ -1,15 +1,19 @@
 package com.smarthr.job.dto.req;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
 import com.smarthr.job.model.enums.EmploymentType;
 import com.smarthr.job.model.enums.ExperienceLevel;
+import com.smarthr.job.model.enums.WorkMode;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -54,6 +58,17 @@ public class CreateJobReq {
 
     private String location;
 
+    private String industry;
+
+    private WorkMode workMode;
+
+    @Min(value = 0, message = "Minimum years of experience cannot be negative")
+    private Integer minYearsExp;
+
+    @NotNull(message = "Deadline is required")
+    @Future(message = "Deadline must be in the future")
+    private OffsetDateTime deadline;
+    
     @NotNull(message = "Employment type is required")
     private EmploymentType employmentType;
 
