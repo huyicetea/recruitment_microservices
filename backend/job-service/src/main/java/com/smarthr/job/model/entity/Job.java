@@ -12,6 +12,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.smarthr.job.model.enums.EmploymentType;
 import com.smarthr.job.model.enums.ExperienceLevel;
 import com.smarthr.job.model.enums.JobStatus;
+import com.smarthr.job.model.enums.WorkMode;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -94,6 +95,19 @@ public class Job {
     @UpdateTimestamp 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "work_mode")
+    private WorkMode workMode;
+
+    @Column(name = "industry")
+    private String industry;
+
+    @Column(name = "min_years_exp")
+    private Integer minYearsExp;
+
+    @Column(name = "deadline")
+    private OffsetDateTime deadline;
 
     @OneToMany(mappedBy = "job", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

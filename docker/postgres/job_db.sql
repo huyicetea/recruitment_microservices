@@ -32,3 +32,11 @@ create table job_skills(
 	required_level varchar(50) default 'REQUIRED',
 	primary key (job_id, skill_id)
 ); 
+
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS work_mode VARCHAR(50);
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS industry VARCHAR(255);
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS min_years_exp INT;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS deadline TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE job_skills ADD COLUMN IF NOT EXISTS must_have BOOLEAN DEFAULT FALSE;
+

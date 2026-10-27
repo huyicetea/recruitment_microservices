@@ -57,6 +57,9 @@ public class JobSkill {
     @JoinColumn(name = "skill_id", nullable = false)
     private Skill skill;
 
+    @Column(name = "must_have", nullable = false)
+    private Boolean mustHave = false;
+
     @Column(name = "required_level", length = 50)
     @Builder.Default
     private String requiredLevel = "REQUIRED";

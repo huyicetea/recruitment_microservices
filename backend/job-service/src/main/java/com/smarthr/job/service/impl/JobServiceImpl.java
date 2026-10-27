@@ -1,6 +1,7 @@
 package com.smarthr.job.service.impl;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.smarthr.common.event.JobEvent;
 import com.smarthr.job.dto.req.CreateJobReq;
 import com.smarthr.job.dto.req.JobSkillReq;
 import com.smarthr.job.dto.req.UpdateJobReq;
@@ -23,6 +25,7 @@ import com.smarthr.job.model.entity.Skill;
 import com.smarthr.job.model.enums.JobStatus;
 import com.smarthr.job.repository.JobRepo;
 import com.smarthr.job.repository.SkillRepo;
+import com.smarthr.job.service.JobEventPublisher;
 import com.smarthr.job.service.JobService;
 
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,7 @@ public class JobServiceImpl implements JobService {
 
     private final JobRepo jobRepo;
     private final SkillRepo skillRepo;
+    private final JobEventPublisher jobEventPublisher;
 
     @Override
     @Transactional
@@ -50,6 +54,10 @@ public class JobServiceImpl implements JobService {
                 .salaryMax(req.getSalaryMax())
                 .currency(req.getCurrency() != null && !req.getCurrency().isBlank() ? req.getCurrency() : "VND")
                 .location(req.getLocation())
+                .industry(req.getIndustry())
+                .workMode(req.getWorkMode())
+                .minYearsExp(req.getMinYearsExp())
+                .deadline(req.getDeadline())
                 .employmentType(req.getEmploymentType())
                 .experienceLevel(req.getExperienceLevel())
                 .status(JobStatus.DRAFT)
@@ -61,6 +69,8 @@ public class JobServiceImpl implements JobService {
             attachSkillsToJob(savedJob, req.getSkills());
             savedJob = jobRepo.save(savedJob);
         }
+
+        jobEventPublisher.publish("job.created", toJobEvent("job.created", savedJob));
 
         return mapToJobRes(savedJob);
     }
@@ -101,6 +111,10 @@ public class JobServiceImpl implements JobService {
         if (req.getSalaryMax() != null) job.setSalaryMax(req.getSalaryMax());
         if (req.getCurrency() != null) job.setCurrency(req.getCurrency());
         if (req.getLocation() != null) job.setLocation(req.getLocation());
+        if (req.getIndustry() != null) job.setIndustry(req.getIndustry());
+        if (req.getWorkMode() != null) job.setWorkMode(req.getWorkMode());
+        if (req.getMinYearsExp() != null) job.setMinYearsExp(req.getMinYearsExp());
+        if (req.getDeadline() != null) job.setDeadline(req.getDeadline());
         if (req.getEmploymentType() != null) job.setEmploymentType(req.getEmploymentType());
         if (req.getExperienceLevel() != null) job.setExperienceLevel(req.getExperienceLevel());
         if (req.getStatus() != null) job.setStatus(req.getStatus());
@@ -115,16 +129,28 @@ public class JobServiceImpl implements JobService {
         }
 
         Job updatedJob = jobRepo.save(job);
+        
+        jobEventPublisher.publish("job.updated", toJobEvent("job.updated", updatedJob));
+
         return mapToJobRes(updatedJob);
     }
 
     @Override
     @Transactional
     public void deleteJob(UUID id) {
-        if (!jobRepo.existsById(id)) {
-            throw new ResourceNotFoundException("Job not found with id: " + id);
-        }
+        Job job = jobRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + id));
+        
         jobRepo.deleteById(id);
+
+        JobEvent deleteEvent = JobEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType("job.deleted")
+                .jobId(id)
+                .companyId(job.getCompanyId())
+                .timestamp(OffsetDateTime.now())
+                .build();
+        jobEventPublisher.publish("job.deleted", deleteEvent);
     }
 
     private void attachSkillsToJob(Job job, Set<JobSkillReq> skillRequests) {
@@ -153,6 +179,7 @@ public class JobServiceImpl implements JobService {
                     .requiredLevel(req.getRequiredLevel() != null && !req.getRequiredLevel().isBlank()
                             ? req.getRequiredLevel()
                             : "REQUIRED")
+                    .mustHave(req.getMustHave() != null ? req.getMustHave() : false)
                     .build();
 
             job.getJobSkills().add(jobSkill);
@@ -184,6 +211,7 @@ public class JobServiceImpl implements JobService {
                             .skillName(js.getSkill().getName())
                             .category(js.getSkill().getCategory())
                             .requiredLevel(js.getRequiredLevel())
+                            .mustHave(js.getMustHave())
                             .build())
                     .collect(Collectors.toSet());
         }
@@ -200,12 +228,46 @@ public class JobServiceImpl implements JobService {
                 .salaryMax(job.getSalaryMax())
                 .currency(job.getCurrency())
                 .location(job.getLocation())
+                .industry(job.getIndustry())
+                .workMode(job.getWorkMode())
+                .minYearsExp(job.getMinYearsExp())
+                .deadline(job.getDeadline())
                 .employmentType(job.getEmploymentType())
                 .experienceLevel(job.getExperienceLevel())
                 .status(job.getStatus())
                 .createdAt(job.getCreatedAt())
                 .updatedAt(job.getUpdatedAt())
                 .skills(skillResponses)
+                .build();
+    }
+
+    private JobEvent toJobEvent(String eventType, Job job) {
+        return JobEvent.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(eventType)
+                .jobId(job.getId())
+                .companyId(job.getCompanyId())
+                .title(job.getTitle())
+                .description(job.getDescription())
+                .requirements(job.getRequirements())
+                .benefits(job.getBenefits())
+                .salaryMin(job.getSalaryMin() != null ? job.getSalaryMin().longValue() : null)
+                .salaryMax(job.getSalaryMax() != null ? job.getSalaryMax().longValue() : null)
+                .currency(job.getCurrency())
+                .location(job.getLocation())
+                .industry(job.getIndustry())
+                .workMode(job.getWorkMode() != null ? job.getWorkMode().name() : null)
+                .minYearsExp(job.getMinYearsExp())
+                .deadline(job.getDeadline())
+                .status(job.getStatus() != null ? job.getStatus().name() : null)
+                .timestamp(OffsetDateTime.now())
+                .skills(job.getJobSkills() == null ? null : job.getJobSkills().stream()
+                        .map(js -> JobEvent.SkillItem.builder()
+                                .skillName(js.getSkill().getName())
+                                .requiredLevel(js.getRequiredLevel())
+                                .mustHave(js.getMustHave())
+                                .build())
+                        .toList())
                 .build();
     }
 }

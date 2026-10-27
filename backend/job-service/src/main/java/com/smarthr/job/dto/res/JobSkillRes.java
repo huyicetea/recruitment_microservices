@@ -12,8 +12,10 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class JobSkillRes {
+
     private Integer skillId;
     private String skillName;
-    private String category;
+    private String category;       
     private String requiredLevel;
+    private Boolean mustHave;     
 }
