@@ -1,4 +1,3 @@
--- Script tự động khởi tạo 5 database riêng biệt theo Database-per-service pattern
 CREATE DATABASE auth_db;
 CREATE DATABASE job_db;
 CREATE DATABASE candidate_db;
