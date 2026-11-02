@@ -39,3 +39,5 @@ CREATE TABLE outbox (
 
 CREATE INDEX idx_jobs_status_deadline ON jobs(status, deadline);
 CREATE INDEX idx_outbox_processed ON outbox(processed);
+CREATE INDEX idx_jobs_company_id ON jobs(company_id);
+CREATE INDEX idx_job_skills_job_id ON job_skills(job_id);
