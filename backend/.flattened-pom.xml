@@ -23,6 +23,8 @@
   <modules>
     <module>common-lib</module>
     <module>job-service</module>
+    <module>auth-service</module>
+    <module>api-gateway</module>
   </modules>
   <properties>
     <maven.compiler.target>21</maven.compiler.target>

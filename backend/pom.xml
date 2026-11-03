@@ -21,6 +21,8 @@
     <modules>
         <module>common-lib</module>
         <module>job-service</module>
+        <module>auth-service</module>
+        <module>api-gateway</module>
     </modules>
 
     <properties>
@@ -69,7 +71,6 @@
 
     <build>
         <plugins>
-            <!-- Plugin giúp Maven giải mã biến ${revision} khi đóng gói/install -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
