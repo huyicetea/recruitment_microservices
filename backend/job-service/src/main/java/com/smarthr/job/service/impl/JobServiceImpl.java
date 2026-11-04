@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,25 +117,12 @@ public class JobServiceImpl implements JobService {
                 .map(JobMapper::toRes);
     }
 
-    @Override
+@   Override
     @Transactional(readOnly = true)
-    public Page<JobRes> searchJobs(String industry, String location, Long salaryMin, JobStatus status, Pageable pageable) {
-        Specification<Job> spec = Specification.where(null);
-
-        if (industry != null && !industry.isBlank()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("industry"), industry));
-        }
-        if (location != null && !location.isBlank()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("location"), location));
-        }
-        if (salaryMin != null) {
-            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("salaryMax"), salaryMin));
-        }
-        if (status != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
-        }
-
-        return jobRepo.findAll(spec, pageable).map(JobMapper::toRes);
+    public Page<JobRes> searchJobs(String keyword, String industry, String location, Long salaryMin, JobStatus status, Pageable pageable) {
+        String statusStr = status != null ? status.name() : null;
+        return jobRepo.searchJobsFts(keyword, industry, location, salaryMin, statusStr, pageable)
+                .map(JobMapper::toRes);
     }
 
     private void saveOutboxEvent(String eventType, Job job) {

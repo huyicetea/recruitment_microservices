@@ -15,5 +15,5 @@ public interface JobService {
     JobRes closeJob(UUID id, UUID companyId);
     JobRes getJobById(UUID id);
     Page<JobRes> getJobsByCompany(UUID companyId, Pageable pageable);
-    Page<JobRes> searchJobs(String industry, String location, Long salaryMin, JobStatus status, Pageable pageable);
+    Page<JobRes> searchJobs(String keyword, String industry, String location, Long salaryMin, JobStatus status, Pageable pageable);
 }

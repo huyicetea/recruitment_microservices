@@ -15,13 +15,13 @@ create table users (
 	status varchar(50) not null, 
 	company_id UUID references companies(id),
 	created_at timestamptz default current_timestamp,
-	update_at timestamptz default current_timestamp
+	updated_at timestamptz default current_timestamp
 );
 
 create table outbox (
 	id UUID primary key, 
 	aggregate_type varchar(255) not null,
-	aggreget_id varchar(255) not null,
+	aggregate_id varchar(255) not null,
 	type varchar(255) not null,
 	payload text not null,
 	created_at timestamptz default current_timestamp,
