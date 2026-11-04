@@ -20,10 +20,12 @@ import org.springframework.util.ResourceUtils;
 import com.smarthr.auth.dto.req.LoginReq;
 import com.smarthr.auth.dto.req.RegisterReq;
 import com.smarthr.auth.dto.res.AuthRes;
+import com.smarthr.auth.model.entity.Outbox;
 import com.smarthr.auth.model.entity.User;
 import com.smarthr.auth.model.enums.Role;
 import com.smarthr.auth.model.enums.UserStatus;
 import com.smarthr.auth.repo.CompanyRepo;
+import com.smarthr.auth.repo.OutboxRepo;
 import com.smarthr.auth.repo.UserRepo;
 import com.smarthr.auth.service.AuthService;
 
@@ -37,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepo userRepo;
     private final CompanyRepo companyRepo;
     private final PasswordEncoder passwordEncoder;
+    private final OutboxRepo outboxRepo;
 
     @Value("${jwt.private-key-path}")
     private String privateKeyPath;
@@ -73,6 +76,15 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         userRepo.save(user);
+
+        Outbox outbox = Outbox.builder()
+                    .aggregateType("user")
+                    .aggregateId(user.getId().toString())
+                    .type("user.registered")
+                    .payload("{\"email\":\"" + user.getEmail() + "\", \"role\":\"" + user.getRole() + "\"}")
+                    .processed(false)
+                    .build();
+        outboxRepo.save(outbox);
     }
 
     @Override
@@ -95,8 +107,6 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = generateAccessToken(user);
         String refreshToken = UUID.randomUUID().toString(); 
         
-        //Refresh token storage in Redis is deferred to complete the MVP login flow first
-
         return AuthRes.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
