@@ -5,9 +5,11 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.smarthr.auth.model.entity.Outbox;
 import com.smarthr.auth.model.entity.User;
 import com.smarthr.auth.model.enums.Role;
 import com.smarthr.auth.model.enums.UserStatus;
+import com.smarthr.auth.repo.OutboxRepo;
 import com.smarthr.auth.repo.UserRepo;
 import com.smarthr.auth.service.AdminService;
 
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminServiceImpl implements AdminService {
 
     private final UserRepo userRepo;
+    private final OutboxRepo outboxRepo;
 
     @Override
     @Transactional
@@ -31,5 +34,14 @@ public class AdminServiceImpl implements AdminService {
 
         user.setStatus(UserStatus.ACTIVE);
         userRepo.save(user);
+
+        Outbox outbox = Outbox.builder()
+                .aggregateType("user")
+                .aggregateId(user.getId().toString())
+                .type("user.hr_approved")
+                .payload("{\"companyId\":\"" + user.getCompanyId() + "\"}")
+                .processed(false)
+                .build();
+        outboxRepo.save(outbox);
     }
 }
